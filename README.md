@@ -31,14 +31,13 @@ To use the [script](https://github.com/JMarkstrom/PIV/raw/main/yubikey-piv.py):
 * Simply open a command prompt and execute: ```ykman script yubikey-piv.py```
 * In the main menu, select an option and follow on-screen instructions.
 
-<sub>Option 1: **Configure YubiKey**:<sub>
+Option 1: **Configure YubiKey**:
 ![](/images/configure-yubikey.gif)
 
-<sub>Option 2: **Validate attestation**:<sub>
+Option 2: **Validate attestation**
 ![](/images/validate-yubikey-attestation.gif)
 
-<sub>Option 3: **import certifcate**:<sub>
-
+Option 3: **import certifcate**:
 ![](/images/import-certificate-to-yubikey.gif)
 
 
