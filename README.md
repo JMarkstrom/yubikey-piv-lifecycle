@@ -52,4 +52,4 @@ Possible improvements includes:
 Any help on the above (see roadmap) is welcome. 
 
 ## 📜 Release History
-* 2023.08.14 `v1.4`
+* 2023.08.14 `v1.0`
