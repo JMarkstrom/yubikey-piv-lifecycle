@@ -2,7 +2,7 @@
 ##########################################################################
 # YubiKey PIV configuration and issuance                    
 ##########################################################################
-# version: 1.3
+# version: 1.0
 # last updated on: 2023-08-14 by Jonas Markström
 # see readme.md for more info.
 #
