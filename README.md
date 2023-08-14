@@ -22,7 +22,7 @@ You will need to meet the following prequisites to make use of this script:
 - An issuing Certificate Authority (CA) e.g a Microsoft PKI
 
 ## 📖 Usage
-To use the script simply open a command prompt and execute: ```ykman script yubikey-piv.py```
+To use the [script](https://github.com/JMarkstrom/PIV/raw/main/yubikey-piv.py) simply open a command prompt and execute: ```ykman script yubikey-piv.py```
 
 <sub>Configuring a YubiKey using Python (example):<sub>
 ![animated gif showing script usage](https://i.imgur.com/Lq0vi92.gif)
