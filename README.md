@@ -43,12 +43,12 @@ Option ```3```: **import certifcate**:
 
 **Note**: For more detail and broader context, please refer to [swjm.blog](https://swjm.blog)
 
-## Roadmap
+## 🥅 Roadmap
 Possible improvements includes:
 - Separate CSR creation from YubiKey configuration (new menu option)
 - Improve CSR to better match Microsoft domain and Entra ID requirements
 
-## Contributing
+## 🥷🏻 Contributing
 Any help on the above (see roadmap) is welcome. 
 
 ## 📜 Release History
