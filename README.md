@@ -28,8 +28,8 @@ You will need to meet the following prequisites to make use of this script:
 ## 📖 Usage
 To use the [script](https://github.com/JMarkstrom/PIV/raw/main/yubikey-piv.py):
 
-- Simply open a command prompt and execute: ```ykman script yubikey-piv.py```
-- In the main menu, select an option and follow on-screen instructions.
+1. Simply open a command prompt and execute: ```ykman script yubikey-piv.py```
+2. In the main menu, select an option and follow on-screen instructions.
 
 Option ```1```: **Configure YubiKey**:
 ![](/images/configure-yubikey.gif)
