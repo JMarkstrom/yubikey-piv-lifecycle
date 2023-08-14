@@ -45,6 +45,7 @@ Option ```3```: **import certifcate**:
 
 ## Roadmap
 Possible improvements includes:
+- Separate CSR creation from YubiKey configuration (new menu option)
 - Improve CSR to better match Microsoft domain and Entra ID requirements
 
 ## Contributing
