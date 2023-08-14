@@ -1,7 +1,5 @@
-# PIV
-Personal Identity Verification (PIV) related assets for YubiKeys
-
- <h1 align="center"> YubiKey PIV "lifecycle" using Python </h1>
+ <h1 align="center"> Personal Identity Verification (PIV) related assets for YubiKeys
+YubiKey PIV "lifecycle" using Python</h1>
 
 ## Table Of Contents
   * [About](https://github.com/JMarkstrom/PIV/blob/main/README.md#about)
