@@ -1,7 +1,7 @@
 # PIV
 Personal Identity Verification (PIV) related assets for YubiKeys
 
-# YubiKey PIV "lifecycle" using Python
+ <h1 align="center"> YubiKey PIV "lifecycle" using Python </h1>
 
 ## Table Of Contents
   * [About](https://github.com/JMarkstrom/PIV/blob/main/README.md#about)
@@ -23,14 +23,14 @@ In summary, the script can perfor the following actions/tasks:
 
 ⚠️ This script is provided "as-is" without any warranty of any kind, either expressed or implied.
 
-## 💻Prerequisites
+## 💻 Prerequisites
 You will need to meet the following prequisites to make use of this script:
 
 - YubiKey Manager (get it [here](https://www.yubico.com/support/download/yubikey-manager/))
 - One (1) YubiKey 5 series authenticator
 - An issuing Certificate Authority (CA) e.g a Microsoft PKI
 
-## Usage
+## 📖 Usage
 To use the script simply open a command prompt and execute: ```ykman script yubikey-piv.py```
 
 <sub>Configuring a YubiKey using Python (example):<sub>
