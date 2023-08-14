@@ -11,6 +11,9 @@ In summary, the script can perfor the following actions/tasks:
 * Create a CSR
 * Perform Attestation
 * Import a certificate
+  
+<sub>Configuring a YubiKey using Python (example):<sub>
+![animated gif showing script usage](https://i.imgur.com/Lq0vi92.gif)
 
 ⚠️ This script is provided "as-is" without any warranty of any kind, either expressed or implied.
 
@@ -23,10 +26,6 @@ You will need to meet the following prequisites to make use of this script:
 
 ## 📖 Usage
 To use the [script](https://github.com/JMarkstrom/PIV/raw/main/yubikey-piv.py) simply open a command prompt and execute: ```ykman script yubikey-piv.py```
-
-<sub>Configuring a YubiKey using Python (example):<sub>
-![animated gif showing script usage](https://i.imgur.com/Lq0vi92.gif)
-
 
 **Note**: For more detail and broader context, please refer to [swjm.blog](https://swjm.blog)
 
