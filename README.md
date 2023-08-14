@@ -43,5 +43,12 @@ Option ```3```: **import certifcate**:
 
 **Note**: For more detail and broader context, please refer to [swjm.blog](https://swjm.blog)
 
+## Roadmap
+Possible improvements includes:
+- Improve CSR to better match Microsoft domain and Entra ID requirements
+
+## Contributing
+Any help on the above (see roadmap) is welcome. 
+
 ## 📜 Release History
 * 2023.08.14 `v1.4`
