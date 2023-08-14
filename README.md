@@ -7,8 +7,6 @@ With regards to issuance, the script creates a CSR that, if issued, allows for a
 <sub>Configuring a YubiKey using Python (example):<sub>
 ![](/images/configure-yubikey.gif)
 
-![animated gif showing script usage](https://i.imgur.com/Lq0vi92.gif)
-
 In summary, the script can perfor the following actions/tasks:
 
 * Change Management Key
@@ -31,15 +29,15 @@ You will need to meet the following prequisites to make use of this script:
 To use the [script](https://github.com/JMarkstrom/PIV/raw/main/yubikey-piv.py):
 
 * Simply open a command prompt and execute: ```ykman script yubikey-piv.py```
-* fgf
+* In the main menu, select an option and follow on-screen instructions.
 
 <sub>Option 1: 'Configure YubiKey'<sub>
 ![](/images/configure-yubikey.gif)
 
-<sub>Option 2:<sub>
+<sub>Option 2: 'Validate attestation'<sub>
 ![](/images/validate-yubikey-attestation.gif)
 
-<sub>Option 3:<sub>
+<sub>Option 3: 'import certifcate'<sub>
 ![](/images/import-certificate-to-yubikey.gif)
 
 
