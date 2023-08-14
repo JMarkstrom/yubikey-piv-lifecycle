@@ -38,7 +38,9 @@ To use the [script](https://github.com/JMarkstrom/PIV/raw/main/yubikey-piv.py):
 ![](/images/validate-yubikey-attestation.gif)
 
 <sub>Option 3: **import certifcate**:<sub>
+
 ![](/images/import-certificate-to-yubikey.gif)
+
 
 **Note**: For more detail and broader context, please refer to [swjm.blog](https://swjm.blog)
 
