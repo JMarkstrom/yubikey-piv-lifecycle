@@ -5,9 +5,9 @@ Personal Identity Verification (PIV) related assets for YubiKeys
 
 ## Table Of Contents
   * [About](https://github.com/JMarkstrom/PIV/blob/main/README.md#about)
-  * [Installation](https://github.com/JMarkstrom/PIV/blob/main/README.md#prerequisites)
+  * [Prerequisites](https://github.com/JMarkstrom/PIV/blob/main/README.md#prerequisites)
   * [Usage](https://github.com/JMarkstrom/PIV/blob/main/README.md#usage)
-  * [Usage](https://github.com/JMarkstrom/PIV/blob/main/README.md#release-history)
+  * [Release History](https://github.com/JMarkstrom/PIV/blob/main/README.md#release-history)
 
 ## About
 The "yubikey-piv.py" script exemplifies how to use Python to perform YubiKey configuration and issuance. 
