@@ -5,7 +5,7 @@ The **yubikey-piv.py** script exemplifies how to use Python to perform YubiKey c
 With regards to issuance, the script creates a CSR that, if issued, allows for authentication into Entra ID (Azure AD).
  
 <sub>Configuring a YubiKey using Python (example):<sub>
-![](/Images/configure-yubikey.gif)
+![](/images/configure-yubikey.gif)
 
 ![animated gif showing script usage](https://i.imgur.com/Lq0vi92.gif)
 
@@ -33,14 +33,14 @@ To use the [script](https://github.com/JMarkstrom/PIV/raw/main/yubikey-piv.py):
 * Simply open a command prompt and execute: ```ykman script yubikey-piv.py```
 * fgf
 
-<sub>Option 1:<sub>
-![](/Images/configure-yubikey.gif)
+<sub>Option 1: 'Configure YubiKey'<sub>
+![](/images/configure-yubikey.gif)
 
 <sub>Option 2:<sub>
-![](/Images/validate-yubikey-attestation.gif)
+![](/images/validate-yubikey-attestation.gif)
 
 <sub>Option 3:<sub>
-![](/Images/import-certificate-to-yubikey.gif)
+![](/images/import-certificate-to-yubikey.gif)
 
 
 **Note**: For more detail and broader context, please refer to [swjm.blog](https://swjm.blog)
