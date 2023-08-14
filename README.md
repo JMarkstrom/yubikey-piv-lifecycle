@@ -1,12 +1,6 @@
 <h1 align="center"> YubiKey PIV "lifecycle" using Python</h1>
 
-## Table Of Contents
-  * [About](https://github.com/JMarkstrom/PIV/blob/main/README.md#about)
-  * [Prerequisites](https://github.com/JMarkstrom/PIV/blob/main/README.md#prerequisites)
-  * [Usage](https://github.com/JMarkstrom/PIV/blob/main/README.md#usage)
-  * [Release History](https://github.com/JMarkstrom/PIV/blob/main/README.md#release-history)
-
-## About
+## ℹ️ About
 The **yubikey-piv.py** script exemplifies how to use Python to perform YubiKey configuration and issuance. 
 With regards to issuance, the script creates a CSR that, if issued, allows for authentication into Entra ID (Azure AD).
 In summary, the script can perfor the following actions/tasks:
@@ -36,5 +30,5 @@ To use the script simply open a command prompt and execute: ```ykman script yubi
 
 **Note**: For more detail and broader context, please refer to [swjm.blog](https://swjm.blog)
 
-## Release History
+## 📜 Release History
 * 2023.08.14 `v1.4`
