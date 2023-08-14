@@ -23,7 +23,7 @@ In summary, the script can perfor the following actions/tasks:
 
 ⚠️ This script is provided "as-is" without any warranty of any kind, either expressed or implied.
 
-## Prerequisites
+## 💻Prerequisites
 You will need to meet the following prequisites to make use of this script:
 
 - YubiKey Manager (get it [here](https://www.yubico.com/support/download/yubikey-manager/))
