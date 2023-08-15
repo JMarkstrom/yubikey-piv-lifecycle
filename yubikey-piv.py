@@ -2,8 +2,8 @@
 ##########################################################################
 # YubiKey PIV configuration and issuance                    
 ##########################################################################
-# version: 1.0
-# last updated on: 2023-08-14 by Jonas Markström
+# version: 1.1
+# last updated on: 2023-08-15 by Jonas Markström
 # see readme.md for more info.
 #
 # DEPENDENCIES: 
@@ -101,8 +101,8 @@ def create_csr():
     click.secho("   ________________________________________________________________________________________________   ", bg="yellow")
     click.secho("  |                                                                                                |  ", bg="yellow")
     click.secho("  |                                            WARNING!                                            |  ", bg="yellow")
-    click.secho("  | This option will will *reset* the YubiKey PIV applet and any existing certificate credential   |  ", bg="yellow")
-    click.secho("  | on the YubiKey will be lost. FIDO2, U2F, OATH and other non-PIV credentials are not affected.  |  ", bg="yellow")
+    click.secho("  | This option will *reset* the YubiKey PIV applet and any existing certificate credential on     |  ", bg="yellow")
+    click.secho("  | the YubiKey will be lost. FIDO2, U2F, OATH and other non-PIV credentials are not affected.     |  ", bg="yellow")
     click.secho("  |                                                                                                |  ", bg="yellow")
     click.secho("  |________________________________________________________________________________________________|  ", bg="yellow")
     click.secho("                                                                                                      ", bg="yellow")
