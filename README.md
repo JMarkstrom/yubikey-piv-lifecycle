@@ -32,7 +32,7 @@ To use the [script](https://github.com/JMarkstrom/PIV/raw/main/yubikey-piv.py):
 2. In the main menu, select an option and follow on-screen instructions.
 
 Option ```1```: **Configure YubiKey**:
-![](/images/configure-yubikey.gif)
+![](/images/configure-yubikey-piv-applet.gif)
 
 Option ```2```: **Validate attestation**
 ![](/images/validate-yubikey-attestation.gif)
@@ -52,5 +52,6 @@ Possible improvements includes:
 Any help on the above (see roadmap) is welcome. 
 
 ## 📜 Release History
+* 2023.08.15 `v1.2` minor improvements
 * 2023.08.15 `v1.1` fixed spelling mistakes
 * 2023.08.14 `v1.0` first release
