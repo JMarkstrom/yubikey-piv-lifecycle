@@ -52,4 +52,5 @@ Possible improvements includes:
 Any help on the above (see roadmap) is welcome. 
 
 ## 📜 Release History
-* 2023.08.14 `v1.0`
+* 2023.08.15 `v1.1` fixed spelling mistakes
+* 2023.08.14 `v1.0` first release
