@@ -2,7 +2,7 @@
 ##########################################################################
 # YubiKey PIV configuration and issuance                    
 ##########################################################################
-# version: 1.1
+# version: 1.2
 # last updated on: 2023-08-15 by Jonas Markström
 # see readme.md for more info.
 #
@@ -65,9 +65,17 @@ import urllib.request
 DEFAULT_PIN = "123456"
 DEFAULT_PUK = "12345678"
 
-# Use slot 9A (authentication), and key type RSA 2048
+# Use slot 9A (authentication)
 slot = SLOT.AUTHENTICATION
+
+# Key type will be RSA 2048
 key_type = KEY_TYPE.RSA2048
+
+# Connect to a YubiKey
+yubikey = s.single()
+
+# Establish a PIV session
+piv = PivSession(yubikey.smart_card())
 
 
 ######################################################################################################################################
@@ -118,13 +126,6 @@ def create_csr():
     continue_or_exit()
     click.clear()
 
-    # Connect to a YubiKey
-    yubikey = s.single()
-
-
-    # Establish a PIV session
-    piv = PivSession(yubikey.smart_card())
-
     # Reset the PIV applet
     piv.reset()
 
@@ -145,7 +146,6 @@ def create_csr():
         
         # Prompt user to set a new Management Key (48 digits)
         while True:
-            # TODO: confirm hexadecimal conversion
             hex_key = click.prompt("Please enter a new Management Key (48 hex digits)", hide_input=False)
             try:
                 int(hex_key, 16)  # Make sure format is valid
@@ -165,10 +165,9 @@ def create_csr():
     click.clear()
 
     # PUK
-    # TODO: check for trivial PUKs
-    create_random_puk = click.confirm(
-        "Do you want us to create a *randomized* PUK for you?", default=True
-    )
+
+    # Prompt user
+    create_random_puk = click.confirm("Do you want us to create a *randomized* PUK for you?", default=True)
 
     if create_random_puk:
         # Generate a random 8 digit PUK
@@ -190,12 +189,10 @@ def create_csr():
 
     click.clear()
 
-
     
     # PIN
 
     # Prompt user to set a new PIN (6-8 digits)
-          
     while True:
         pin = click.prompt("Please enter a new PIN (6-8 digits)", hide_input=False)
         if not pin.isdigit():
@@ -212,7 +209,7 @@ def create_csr():
     click.clear()
 
 
-    # Generate a new keypair on the YubiKey
+    # Generate a new key pair on the YubiKey
     click.echo(f"Generating {key_type.name} private key in slot {slot:X}...")
     try:
         pub_key = piv.generate_key(slot, key_type)
@@ -221,7 +218,7 @@ def create_csr():
 
     click.clear()
 
-    # Prepare the subject:
+    # Prepare the subject
     '''
     NOTE: For more details on CSR creation, please refer to:
         https://cryptography.io/en/latest/x509/reference/#x-509-csr-certificate-signing-request-builder-object
@@ -446,8 +443,6 @@ def validate_attestation():
 def import_certificate():
     click.clear()
         
-    slot = SLOT.AUTHENTICATION
-
     # Inform the user
     click.secho("   ________________________________________________________________________________________________   ", bg="blue")
     click.secho("  |                                                                                                |  ", bg="blue")
@@ -470,12 +465,6 @@ def import_certificate():
 
     continue_or_exit()
     click.clear()
-
-    # Connect to a YubiKey
-    yubikey = s.single()
-
-    # Establish a PIV session
-    piv = PivSession(yubikey.smart_card())
 
     # Authenticate with management key in order to support certificate import
     for i in range(3):
@@ -526,7 +515,7 @@ def quit_program():
 ######################################################################################################################################
 # THIS IS OUR MAIN MENU SYSTEM                                                                                                       #   
 ######################################################################################################################################
-
+click.clear()
 menu = {
     "1": "Configure YubiKey",
     "2": "Validate attestation",
@@ -559,6 +548,10 @@ while True:
     click.secho("  |                                                                                                |  ", bg="green")
     click.secho("  |________________________________________________________________________________________________|  ", bg="green")
     click.secho("                                                                                                      ", bg="green")
+
+    #click.pause("\nPress any key to acknowledge.")
+    #click.clear()
+
     click.secho("                                                                                     ")
     click.secho("MAIN MENU:")
     click.secho("==========\n")
