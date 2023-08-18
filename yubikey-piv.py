@@ -4,7 +4,7 @@
 ##########################################################################
 # version: 1.2
 # last updated on: 2023-08-17 by Jonas Markström
-# see readme.md for more info.
+# see readme.md (on GitHub.com) for more info.
 #
 # DEPENDENCIES: 
 #   - YubiKey Manager (ykman) must be installed on the system
