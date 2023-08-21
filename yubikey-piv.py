@@ -3,11 +3,12 @@
 # YubiKey PIV configuration and issuance                    
 ##########################################################################
 # version: 1.2
-# last updated on: 2023-08-17 by Jonas Markström
+# last updated on: 2023-08-18 by Jonas Markström
 # see readme.md (on GitHub.com) for more info.
 #
 # DEPENDENCIES: 
 #   - YubiKey Manager (ykman) must be installed on the system
+#     Get it here: https://www.yubico.com/support/download/yubikey-manager/ 
 #
 # LIMITATIONS/ KNOWN ISSUES: N/A
 # 
