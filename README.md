@@ -55,7 +55,5 @@ Possible improvements includes:
 Any help on the above (see roadmap) is welcome. 
 
 ## 📜 Release History
-* 2023.09.06 `v2.0` CSR creation as separate menu option
-* 2023.08.15 `v1.2` minor improvements
-* 2023.08.15 `v1.1` fixed spelling mistakes
+* 2023.09.06 `v2.0` Various improvements
 * 2023.08.14 `v1.0` first release
