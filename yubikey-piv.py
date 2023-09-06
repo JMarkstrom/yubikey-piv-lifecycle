@@ -383,7 +383,7 @@ def validate_attestation():
     click.clear()
     attestation_file = click.prompt("Please provide the path to the PIV Attestation Certificate", default="attestation.pem")
     click.clear()
-    intermediate_file = click.prompt("Please provide the path to the Attestation Certificate", default="intermediate.pem")
+    intermediate_file = click.prompt("Please provide the path to the Intermediate Certificate", default="intermediate.pem")
     click.clear()
     # This is the Yubico Root CA certificate. It will not be provided by the end-user
     ca_file = "piv-attestation-ca.pem"
