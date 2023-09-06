@@ -43,7 +43,7 @@ Option ```3```: **Validate attestation**:
 
 ![](/images/validate-yubikey-attestation.gif)
 
-Option ```4```: **import certifcate**:
+Option ```4```: **Import certifcate**:
 
 ![](/images/import-certificate-to-yubikey.gif)
 
