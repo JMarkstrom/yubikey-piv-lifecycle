@@ -3,9 +3,6 @@
 ## ℹ️ About
 The **yubikey-piv.py** script exemplifies how to use Python to perform YubiKey configuration and issuance of a PIV credential. 
 With regards to issuance, the script creates a Certificate Signing Request (CSR) that, if issued, allows for authentication into Entra ID (Azure AD).
- 
-<sub>Configuring a YubiKey using Python (example):<sub>
-![](/images/configure-yubikey.gif)
 
 In summary, the script can perfor the following actions/tasks:
 
