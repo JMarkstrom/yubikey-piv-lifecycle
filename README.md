@@ -35,11 +35,15 @@ Option ```1```: **Configure YubiKey**:
 
 ![](/images/configure-yubikey-piv-applet.gif)
 
-Option ```2```: **Validate attestation**:
+Option ```2```: **Create a CSR**:
+
+![](/images/create-csr-for-yubikey.gif)
+
+Option ```3```: **Validate attestation**:
 
 ![](/images/validate-yubikey-attestation.gif)
 
-Option ```3```: **import certifcate**:
+Option ```4```: **import certifcate**:
 
 ![](/images/import-certificate-to-yubikey.gif)
 
@@ -48,13 +52,13 @@ Option ```3```: **import certifcate**:
 
 ## 🥅 Roadmap
 Possible improvements includes:
-- Separate CSR creation from YubiKey configuration (new menu option)
 - Improve CSR to better match Microsoft domain and Entra ID requirements
 
 ## 🥷🏻 Contributing
 Any help on the above (see roadmap) is welcome. 
 
 ## 📜 Release History
+* 2023.09.06 `v2.0` CSR creation as separate menu option
 * 2023.08.15 `v1.2` minor improvements
 * 2023.08.15 `v1.1` fixed spelling mistakes
 * 2023.08.14 `v1.0` first release
