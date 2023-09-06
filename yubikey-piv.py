@@ -2,13 +2,12 @@
 ##########################################################################
 # YubiKey PIV configuration and issuance                    
 ##########################################################################
-# version: 1.4
-# last updated on: 2023-08-21 by Jonas Markström
-# see readme.md (on GitHub.com) for more info.
+# version: 2.0
+# last updated on: 2023-09-06 by Jonas Markström
+# see readme.md for more info.
 #
 # DEPENDENCIES: 
 #   - YubiKey Manager (ykman) must be installed on the system
-#     Get it here: https://www.yubico.com/support/download/yubikey-manager/ 
 #
 # LIMITATIONS/ KNOWN ISSUES: N/A
 # 
@@ -80,7 +79,7 @@ piv = PivSession(yubikey.smart_card())
 
 
 ######################################################################################################################################
-# CONFIGURE YUBIKEY AND CREATE CSR (OPTION 1)                                                                                        #   
+# CONFIGURE THE YUBIKEY (OPTION 1)                                                                                        #   
 ######################################################################################################################################
 
 # Function to check for trivial PIN or PUK selection
@@ -103,7 +102,7 @@ def is_trivial(value):
 
     return False
 
-def create_csr():
+def configure_yubikey():
     click.clear()
 
     # We should warn the user on the effects of resetting the PIV applet!
@@ -115,6 +114,7 @@ def create_csr():
     click.secho("  |                                                                                                |  ", bg="yellow")
     click.secho("  |________________________________________________________________________________________________|  ", bg="yellow")
     click.secho("                                                                                                      ", bg="yellow")
+
     # Prompt user to continue
     def continue_or_exit():
         if click.confirm("Do you want to continue?", default=True):
@@ -147,6 +147,7 @@ def create_csr():
         
         # Prompt user to set a new Management Key (48 digits)
         while True:
+            # TODO: confirm hexadecimal conversion
             hex_key = click.prompt("Please enter a new Management Key (48 hex digits)", hide_input=False)
             try:
                 int(hex_key, 16)  # Make sure format is valid
@@ -166,9 +167,10 @@ def create_csr():
     click.clear()
 
     # PUK
-
-    # Prompt user
-    create_random_puk = click.confirm("Do you want us to create a *randomized* PUK for you?", default=True)
+    # TODO: check for trivial PUKs
+    create_random_puk = click.confirm(
+        "Do you want us to create a *randomized* PUK for you?", default=True
+    )
 
     if create_random_puk:
         # Generate a random 8 digit PUK
@@ -194,6 +196,7 @@ def create_csr():
     # PIN
 
     # Prompt user to set a new PIN (6-8 digits)
+          
     while True:
         pin = click.prompt("Please enter a new PIN (6-8 digits)", hide_input=False)
         if not pin.isdigit():
@@ -210,6 +213,71 @@ def create_csr():
     click.clear()
 
 
+    # Inform the user
+    click.echo("Please note the following YubiKey details:\n")
+    click.echo("-----------------------------------------------------------------------------")
+    click.echo(f"YubiKey device info:   {yubikey}")
+    click.echo(f"Management Key:        {hex_key}")
+    click.echo(f"PIN:                   {pin}")
+    click.echo(f"PUK:                   {puk}")
+    click.echo("=============================================================================")
+    click.echo("")
+    # Return to menu system
+    click.pause("\nPress any key to return to the main menu.")
+    click.clear()
+
+
+######################################################################################################################################
+# CREATE A CSR (OPTION 2)                                                                                               #   
+######################################################################################################################################
+
+def create_csr():
+    click.clear()
+
+    # Inform the user
+    click.secho("   ________________________________________________________________________________________________   ", bg="blue")
+    click.secho("  |                                                                                                |  ", bg="blue")
+    click.secho("  |                                            INFO                                                |  ", bg="blue")
+    click.secho("  | This option will create Certificate Signing Request (CSR) based on user input. The script      |  ", bg="blue")
+    click.secho("  | will output the CSR as well as necessary artifacts to support Attestation (optional task).     |  ", bg="blue")
+    click.secho("  |                                                                                                |  ", bg="blue")
+    click.secho("  |________________________________________________________________________________________________|  ", bg="blue")
+    click.secho("                                                                                                      ", bg="blue")
+
+    # Prompt user to continue
+    def continue_or_exit():
+        if click.confirm("Do you want to continue?", default=True):
+            click.clear()
+        else:
+            click.echo("Exiting the program...")
+            # Perform cleanup or any necessary steps before exiting
+            raise SystemExit
+
+    continue_or_exit()
+    click.clear()
+
+    # Authenticate with management key to perform key generation
+
+    for i in range(3):
+        try:
+            # TODO: confirm hexadecimal and not decimal properties
+            key = click.prompt("Please enter your Management Key", default=DEFAULT_MANAGEMENT_KEY.hex())
+            piv.authenticate(MANAGEMENT_KEY_TYPE.TDES, bytes.fromhex(key))
+            break
+        except:
+            click.clear()
+            click.secho("⛔ That does not look like the correct key!\n", fg="red")
+            click.pause("Press any key to try again.")
+            click.clear()
+    if i == 2:
+        click.clear()
+        click.secho("🛑 No valid key provided. Exiting program...", fg="red")
+        time.sleep(2) # Pause for 2 seconds
+        click.clear()
+        sys.exit()
+
+    click.clear()
+
     # Generate a new key pair on the YubiKey
     click.echo(f"Generating {key_type.name} private key in slot {slot:X}...")
     try:
@@ -219,7 +287,7 @@ def create_csr():
 
     click.clear()
 
-    # Prepare the subject
+    # Prepare the subject:
     '''
     NOTE: For more details on CSR creation, please refer to:
         https://cryptography.io/en/latest/x509/reference/#x-509-csr-certificate-signing-request-builder-object
@@ -232,7 +300,7 @@ def create_csr():
     orgName = click.prompt("Please enter your organization name", default="Users")
     domainName = click.prompt("Please enter your domain name", default="contoso")
     topDomain = click.prompt("Please enter your top domain name", default="com")
-    # TODO: Solve *this* to better mimic the Azure AD expected certificate structure!
+    # TODO: Solve *this* to better mimic the Entra ID / Azure AD expected certificate structure!
     # Define the Object Identifier (OID) for OtherName
     #oid_other_name = ObjectIdentifier('1.3.6.1.4.1.311.20.2.3')
 
@@ -290,9 +358,29 @@ def create_csr():
     )
 
         )
+    click.clear()
 
-    # Verify the PIN
-    piv.verify_pin(pin)
+
+    # The user must input PIN
+    for i in range(3):
+        try:
+            pin = click.prompt("Please enter your PIN", default=DEFAULT_PIN)
+            piv.verify_pin(pin)
+            break
+        except:
+            click.clear()
+            click.secho("⛔ That does not look like the correct PIN!\n", fg="red")
+            click.pause("Press any key to try again.")
+            click.clear()
+    if i == 2:
+        click.clear()
+        click.secho("🛑 No valid PIN provided. Exiting program...", fg="red")
+        time.sleep(2) # Pause for 2 seconds
+        click.clear()
+        sys.exit()
+
+    click.clear()
+
 
     # Sign the CSR
     csr = sign_csr_builder(piv, slot, pub_key, builder)
@@ -320,24 +408,15 @@ def create_csr():
     with open('intermediate.pem', 'wb') as f:
         f.write(intermediate.public_bytes(serialization.Encoding.PEM))
     click.clear()
-
-    # Inform the user
-    click.echo("Please note the following YubiKey details:\n")
-    click.echo("-----------------------------------------------------------------------------")
-    click.echo(f"YubiKey device info:   {yubikey}")
-    click.echo(f"Management Key:        {hex_key}")
-    click.echo(f"PIN:                   {pin}")
-    click.echo(f"PUK:                   {puk}")
-    click.echo("=============================================================================")
+    
     click.secho("✅ CSR and attestation certificates have been saved to current directory!", fg="green")
-    click.echo("")
+
     # Return to menu system
     click.pause("\nPress any key to return to the main menu.")
     click.clear()
 
-
 ######################################################################################################################################
-# VALIDATE ATTESTATION (OPTION 2)                                                                                                    #   
+# VALIDATE ATTESTATION (OPTION 3)                                                                                                    #   
 ######################################################################################################################################
 
 def validate_attestation():
@@ -438,12 +517,12 @@ def validate_attestation():
 
 
 ######################################################################################################################################
-# IMPORT SIGNED CERTIFICATE (OPTION 3)                                                                                               #   
+# IMPORT SIGNED CERTIFICATE (OPTION 4)                                                                                               #   
 ######################################################################################################################################
 
 def import_certificate():
     click.clear()
-        
+
     # Inform the user
     click.secho("   ________________________________________________________________________________________________   ", bg="blue")
     click.secho("  |                                                                                                |  ", bg="blue")
@@ -466,7 +545,7 @@ def import_certificate():
 
     continue_or_exit()
     click.clear()
-
+    
     # Authenticate with management key in order to support certificate import
     for i in range(3):
         try:
@@ -516,12 +595,13 @@ def quit_program():
 ######################################################################################################################################
 # THIS IS OUR MAIN MENU SYSTEM                                                                                                       #   
 ######################################################################################################################################
-click.clear()
+
 menu = {
     "1": "Configure YubiKey",
-    "2": "Validate attestation",
-    "3": "Import certificate",
-    "4": "Quit program"
+    "2": "Create a CSR",
+    "3": "Validate attestation",
+    "4": "Import certificate",
+    "5": "Quit program"
 }
 
 
@@ -534,39 +614,41 @@ while True:
     click.secho("  |                                            WELCOME                                             |  ", bg="green")
     click.secho("  | This script is designed to perform administrative tasks related to YubiKey PIV lifecycle.      |  ", bg="green")
     click.secho("  |                                                                                                |  ", bg="green")
-    click.secho("  | OPTION 1 configures the YubiKey PIV applet by generating a new Management Key, a new PUK, PIN  |  ", bg="green")
-    click.secho("  | and creating a new key pair in the PIV Authentication slot (9A) to support Certificate-Based   |  ", bg="green")
-    click.secho("  | Authentication (CBA). A Certificate Signing Request (CSR) is then generated based on end-use   |  ", bg="green")
-    click.secho("  | input. Finally the script outputs the necessary files to support certificate issuance as well  |  ", bg="green")
-    click.secho("  | as attesting that the associate keypair was generated by a YubiKey (optional).                 |  ", bg="green")
-    click.secho("  |                                                                                                |  ", bg="green")          
-    click.secho("  | OPTION 2 validates the CSR and auxiliary certificates created in option 1 by checking the      |  ", bg="green")
+    click.secho("  | OPTION 1 resets the YubiKey PIV applet and then sets a new Management Key, a new PUK, & PIN.   |  ", bg="green")
+    click.secho("  | The script offers to randomize the Management Key as well as the PUK, but the PIN must be set  |  ", bg="green")
+    click.secho("  | by the user. PUK and PIN selection must not be trivial (easy to guess).                        |  ", bg="green")
+    click.secho("  |                                                                                                |  ", bg="green")
+    click.secho("  | OPTION 2 generates a new key pair in the PIV Authentication slot (9A) to support CBA           |  ", bg="green")   
+    click.secho("  | Certificate-Based Authentication. A Certificate Signing Request (CSR) is then generated based  |  ", bg="green")                                                                                                 
+    click.secho("  | on end-user input. The script outputs the necessary files to support certificate issuance.     |  ", bg="green")
+    click.secho("  |                                                                                                |  ", bg="green")         
+    click.secho("  | OPTION 3 validates the CSR and auxiliary certificates created in option 2 by checking the      |  ", bg="green")
     click.secho("  | Attestation Certificate and the necessary CA signatures. This option is intended to be run by  |  ", bg="green")
     click.secho("  | an administrator, prior to signing the CSR using a Certificate Authority (out of scope).       |  ", bg="green")
     click.secho("  |                                                                                                |  ", bg="green")
-    click.secho("  | OPTION 3 imports a signed certificate to the PIV Authentication slot (9A), thus completing the |  ", bg="green")
+    click.secho("  | OPTION 4 imports a signed certificate to the PIV Authentication slot (9A), thus completing the |  ", bg="green")
     click.secho("  | Issuance process. This step is intended to be performed by the end-user.                       |  ", bg="green")
     click.secho("  |                                                                                                |  ", bg="green")
     click.secho("  |________________________________________________________________________________________________|  ", bg="green")
     click.secho("                                                                                                      ", bg="green")
-
-    #click.pause("\nPress any key to acknowledge.")
-    #click.clear()
-
-    click.secho("                                                                                     ")
+    
+    click.pause("\nPress any key to continue.")
+    click.clear()
     click.secho("MAIN MENU:")
     click.secho("==========\n")
-    
+
     for option in options:
         print(option + ". " + menu[option])
     selection = input("\nPlease select an option: ")
     if selection == "1":
-        create_csr()
+        configure_yubikey()
     elif selection == "2":
-        validate_attestation()
+        create_csr()
     elif selection == "3":
-        import_certificate()
+        validate_attestation()
     elif selection == "4":
+        import_certificate()
+    elif selection == "5":
         quit_program()
     else:
         click.clear()
