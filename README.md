@@ -45,7 +45,7 @@ Option ```4```: **Import certifcate**:
 ![](/images/import-certificate-to-yubikey.gif)
 
 
-**Note**: For more detail and broader context, please refer to [swjm.blog](https://swjm.blog)
+**Note**: For more detail and broader context, please refer to [swjm.blog]([https://swjm.blog](https://swjm.blog/fc967d06d4b0))
 
 ## 🥅 Roadmap
 Possible improvements includes:
