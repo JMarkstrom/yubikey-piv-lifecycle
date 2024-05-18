@@ -40,7 +40,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 ######################################################################
 
-# Imports
+# Standard library imports
+import sys
+import os
+import random
+import time
+import urllib.request
+# import datetime  # Unused import
+
+# Third-party imports
+import click
 from yubikit.piv import (
     PivSession,
     SLOT,
@@ -48,15 +57,12 @@ from yubikit.piv import (
     MANAGEMENT_KEY_TYPE,
     DEFAULT_MANAGEMENT_KEY,
 )
-
 from ykman.piv import sign_csr_builder
 from ykman import scripting as s
-
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
-
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.x509 import (
     oid,
     CertificateSigningRequestBuilder,
@@ -69,14 +75,6 @@ from cryptography.x509 import (
     SubjectAlternativeName,
     RFC822Name,
 )
-
-import sys
-import os
-import random
-#import datetime
-import time
-import click
-import urllib.request
 
 # Default PIN and PUK values for the YubiKey PIV applet
 DEFAULT_PIN = "123456"
