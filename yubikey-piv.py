@@ -146,6 +146,7 @@ def configure_yubikey():
     piv.reset()
 
     # Unlock with the management key
+    # TODO: Handle AES management key in fw. 5.7
     piv.authenticate(MANAGEMENT_KEY_TYPE.TDES,(DEFAULT_MANAGEMENT_KEY))
 
     # MANAGEMENT KEY
