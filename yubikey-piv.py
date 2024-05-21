@@ -1,8 +1,8 @@
 ######################################################################
 # YubiKey PIV configuration and issuance                    
 ######################################################################
-# version: 2.0
-# last updated on: 2024-05-18 by Jonas Markström
+# version: 2.1
+# last updated on: 2024-05-21 by Jonas Markström
 # see readme.md for more info.
 #
 # DEPENDENCIES: 
@@ -57,7 +57,8 @@ from yubikit.piv import (
     MANAGEMENT_KEY_TYPE,
     DEFAULT_MANAGEMENT_KEY,
 )
-from ykman.piv import sign_csr_builder
+from yubikit.core import NotSupportedError
+from ykman.piv import sign_csr_builder 
 from ykman import scripting as s
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -91,6 +92,12 @@ yubikey = s.single()
 
 # Establish a PIV session
 piv = PivSession(yubikey.smart_card())
+
+'''
+# Get firmware version for comparison e.g determine if a feature is supported...
+version_info = yubikey.info.version
+fw = f"{version_info.major}.{version_info.minor}.{version_info.patch}"
+'''
 
 
 ######################################################################################################################################
@@ -145,11 +152,21 @@ def configure_yubikey():
     # Reset the PIV applet
     piv.reset()
 
-    # Unlock with the management key
-    # TODO: Handle AES management key in fw. 5.7
-    piv.authenticate(MANAGEMENT_KEY_TYPE.TDES,(DEFAULT_MANAGEMENT_KEY))
-
     # MANAGEMENT KEY
+  
+    # Check if YubiKey takes TDES or AES Management key
+    """
+    If there is no metadata support, then the YubiKey uses TDES.
+    Otherwise we use the metadata to determine what key type to use.
+    """
+    try:
+        key_type = piv.get_management_key_metadata().key_type
+    except NotSupportedError:
+        print("NotSupportedError")
+        key_type = MANAGEMENT_KEY_TYPE.TDES
+
+    # Unlock with the management key
+    piv.authenticate(key_type,(DEFAULT_MANAGEMENT_KEY))
 
     # Define hex_key with a default value of None
     hex_key = None
