@@ -55,5 +55,6 @@ Possible improvements includes:
 Any help on the above (see roadmap) is welcome. 
 
 ## 📜 Release History
+* 2024.06.04 `v2.2` YubiKey fw 5.7+ support
 * 2023.09.06 `v2.0` Various improvements
 * 2023.08.14 `v1.0` first release
