@@ -1,8 +1,8 @@
 ######################################################################
 # YubiKey PIV configuration and issuance                    
 ######################################################################
-# version: 2.1
-# last updated on: 2024-05-21 by Jonas Markström
+# version: 2.2
+# last updated on: 2024-06-04 by Jonas Markström
 # see readme.md for more info.
 #
 # DEPENDENCIES: 
@@ -160,13 +160,13 @@ def configure_yubikey():
     Otherwise we use the metadata to determine what key type to use.
     """
     try:
-        key_type = piv.get_management_key_metadata().key_type
+        mgmt_key_type = piv.get_management_key_metadata().key_type
     except NotSupportedError:
         print("NotSupportedError")
-        key_type = MANAGEMENT_KEY_TYPE.TDES
+        mgmt_key_type = MANAGEMENT_KEY_TYPE.TDES
 
     # Unlock with the management key
-    piv.authenticate(key_type,(DEFAULT_MANAGEMENT_KEY))
+    piv.authenticate(mgmt_key_type,(DEFAULT_MANAGEMENT_KEY))
 
     # Define hex_key with a default value of None
     hex_key = None
@@ -196,7 +196,8 @@ def configure_yubikey():
             break
 
     # Set new management key from random key or user input key
-    piv.set_management_key(MANAGEMENT_KEY_TYPE.TDES, bytes.fromhex(hex_key))
+    piv.set_management_key(mgmt_key_type, bytes.fromhex(hex_key))
+   
     click.clear()
 
     # PUK
@@ -289,13 +290,26 @@ def create_csr():
     continue_or_exit()
     click.clear()
 
+    # Check if YubiKey takes TDES or AES Management key
+    """
+    If there is no metadata support, then the YubiKey uses TDES.
+    Otherwise we use the metadata to determine what key type to use.
+    """
+    try:
+        mgmt_key_type = piv.get_management_key_metadata().key_type
+    except NotSupportedError:
+        print("NotSupportedError")
+        mgmt_key_type = MANAGEMENT_KEY_TYPE.TDES
+
     # Authenticate with management key to perform key generation
 
     for i in range(3):
         try:
             # TODO: confirm hexadecimal and not decimal properties
             key = click.prompt("Please enter your Management Key", default=DEFAULT_MANAGEMENT_KEY.hex())
-            piv.authenticate(MANAGEMENT_KEY_TYPE.TDES, bytes.fromhex(key))
+            piv.authenticate(mgmt_key_type, bytes.fromhex(key))
+            #piv.authenticate(MANAGEMENT_KEY_TYPE.TDES, bytes.fromhex(key))
+            #piv.authenticate(key_type,(DEFAULT_MANAGEMENT_KEY))
             break
         except:
             click.clear()
@@ -578,13 +592,24 @@ def import_certificate():
 
     continue_or_exit()
     click.clear()
+
+    # Check if YubiKey takes TDES or AES Management key
+    """
+    If there is no metadata support, then the YubiKey uses TDES.
+    Otherwise we use the metadata to determine what key type to use.
+    """
+    try:
+        mgmt_key_type = piv.get_management_key_metadata().key_type
+    except NotSupportedError:
+        print("NotSupportedError")
+        mgmt_key_type = MANAGEMENT_KEY_TYPE.TDES
     
     # Authenticate with management key in order to support certificate import
     for i in range(3):
         try:
             # TODO: confirm hexadecimal and not decimal properties
             key = click.prompt("Please enter your Management Key", default=DEFAULT_MANAGEMENT_KEY.hex())
-            piv.authenticate(MANAGEMENT_KEY_TYPE.TDES, bytes.fromhex(key))
+            piv.authenticate(mgmt_key_type, bytes.fromhex(key))
             break
         except:
             click.clear()
