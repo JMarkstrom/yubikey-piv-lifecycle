@@ -448,7 +448,7 @@ def create_csr():
         f.write(attest_pem)
     click.clear()
 
-    # Export intermediate certificate from slot 9F
+    # Export intermediate certificate from slot f9
     intermediate = piv.get_certificate(slot.ATTESTATION)
 
     # Save Attestation certificate to file
@@ -473,7 +473,7 @@ def validate_attestation():
     click.secho("  |                                                                                                |  ", bg="blue")
     click.secho("  |                                             INFO                                               |  ", bg="blue")
     click.secho("  | This option tests the authenticity of a certificate signing request (CSR) by verifying it's    |  ", bg="blue")
-    click.secho("  | private key attestation against the YubiKey attestation certificate (exported from Slot 9F)    |  ", bg="blue")
+    click.secho("  | private key attestation against the YubiKey attestation certificate (exported from Slot F9)    |  ", bg="blue")
     click.secho("  | and in turn verifying that certificate against the Yubico Root CA certificate.                 |  ", bg="blue")
     click.secho("  |                                                                                                |  ", bg="blue")
     click.secho("  | If the script returns 'SUCCESS' then you can be certain the CSR originates  with a key pair    |  ", bg="blue")
