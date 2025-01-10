@@ -52,7 +52,10 @@ Possible improvements includes:
 - Improve CSR to better match Microsoft domain and Entra ID requirements
 
 ## 🥷🏻 Contributing
-Any help on the above (see roadmap) is welcome. 
+You can help by getting involved in the project, _or_ by donating (any amount!).   
+Donations will support costs such as domain registration and code signing (planned).
+
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?business=RXAPDEYENCPXS&no_recurring=1&item_name=Help+cover+costs+of+the+SWJM+blog+and+app+code+signing%2C+supporting+a+more+secure+future+for+all.&currency_code=USD)
 
 ## 📜 Release History
 * 2024.06.04 `v2.2` YubiKey fw 5.7+ support
