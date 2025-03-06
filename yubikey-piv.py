@@ -1,8 +1,8 @@
 ######################################################################
 # YubiKey PIV configuration and issuance                    
 ######################################################################
-# version: 2.2
-# last updated on: 2024-06-04 by Jonas Markström
+# version: 2.3
+# last updated on: 2025-03-06 by Jonas Markström
 # see readme.md for more info.
 #
 # DEPENDENCIES: 
@@ -13,7 +13,7 @@
 # USAGE: ykman script yubikey-piv.py
 #
 # BSD 2-Clause License                                                             
-# Copyright (c) 2024, Jonas Markström 
+# Copyright (c) 2025, Jonas Markström 
 #
 #   Redistribution and use in source and binary forms, with or
 #   without modification, are permitted provided that the following
@@ -46,7 +46,8 @@ import os
 import random
 import time
 import urllib.request
-# import datetime  # Unused import
+import binascii
+import logging
 
 # Third-party imports
 import click
@@ -85,7 +86,7 @@ DEFAULT_PUK = "12345678"
 slot = SLOT.AUTHENTICATION
 
 # Key type will be RSA 2048
-key_type = KEY_TYPE.RSA2048
+key_type = KEY_TYPE.RSA2048 # TODO: Make this detectable!
 
 # Connect to a YubiKey
 yubikey = s.single()
@@ -448,7 +449,7 @@ def create_csr():
         f.write(attest_pem)
     click.clear()
 
-    # Export intermediate certificate from slot f9
+    # Export intermediate certificate from slot 9F
     intermediate = piv.get_certificate(slot.ATTESTATION)
 
     # Save Attestation certificate to file
@@ -473,7 +474,7 @@ def validate_attestation():
     click.secho("  |                                                                                                |  ", bg="blue")
     click.secho("  |                                             INFO                                               |  ", bg="blue")
     click.secho("  | This option tests the authenticity of a certificate signing request (CSR) by verifying it's    |  ", bg="blue")
-    click.secho("  | private key attestation against the YubiKey attestation certificate (exported from Slot F9)    |  ", bg="blue")
+    click.secho("  | private key attestation against the YubiKey attestation certificate (exported from Slot 9F)    |  ", bg="blue")
     click.secho("  | and in turn verifying that certificate against the Yubico Root CA certificate.                 |  ", bg="blue")
     click.secho("  |                                                                                                |  ", bg="blue")
     click.secho("  | If the script returns 'SUCCESS' then you can be certain the CSR originates  with a key pair    |  ", bg="blue")
@@ -496,13 +497,75 @@ def validate_attestation():
     click.clear()
 
    # Define function to verify signature
-    def verify_signature(parent, child):
+    def verify_signature(parent: x509.Certificate, child: x509.Certificate) -> None:
         parent.public_key().verify(
             child.signature,
             child.tbs_certificate_bytes,
             padding.PKCS1v15(),
             child.signature_hash_algorithm
         )
+    
+    # Define function to display attested YubiKey attributes
+    def get_yubikey_metadata(attestation_cert):
+        """
+        Extract and display YubiKey metadata from attestation certificate.
+        
+        Args:
+            attestation_cert: x509 certificate containing YubiKey metadata
+            
+        Returns:
+            None - prints metadata to console
+        """
+        firmware_version = serial_number = pin_policy = touch_policy = "Not Found"
+        
+        # Define form factor mapping
+        form_factor_names = {
+            b'\x00': "Unknown",
+            b'\x01': "Keychain (USB-A)",
+            b'\x02': "YubiKey Nano (USB-A)",
+            b'\x03': "Keychain (USB-C)",
+            b'\x04': "YubiKey Nano (USB-C)",
+            b'\x05': "Keychain (Lightning + USB-C)",
+            b'\x06': "YubiKey Bio MPE (USB-A)",
+            b'\x07': "YubiKey Bio MPE (USB-C)"
+        }
+
+        # Initialize FIPS status as Non-FIPS by default
+        fips_status = "false"
+        
+        for ext in attestation_cert.extensions:
+            # Get Model / formfactor
+            if ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.9":
+                form_factor = form_factor_names.get(ext.value.value, "Unknown")
+            
+            # Get FIPS status
+            elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.10":
+                # If the OID is present, it's a FIPS device
+                fips_status = "true"
+            elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.7":
+                # Get Serial Number
+                ext_data = ext.value.value
+                # Assuming the first two bytes are not part of the serial number, skip them
+                serial_number = int(binascii.hexlify(ext_data[2:]), 16)
+            
+            elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.3":
+                # Get Firmware Version
+                ext_data = binascii.hexlify(ext.value.value).decode('utf-8')
+                firmware_version = f"{int(ext_data[:2], 16)}.{int(ext_data[2:4], 16)}.{int(ext_data[4:6], 16)}"
+            elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.8":
+                # Get PIN and Touch Policy
+                ext_data = binascii.hexlify(ext.value.value).decode('utf-8')
+                pin_policy = {"01": "never", "02": "once per session", "03": "always"}.get(ext_data[:2], "Unknown")
+                touch_policy = {"01": "never", "02": "always", "03": "cached for 15s"}.get(ext_data[2:4], "Unknown")
+
+        # Display the YubiKey metadata
+        click.secho(f"✅ Model: {form_factor}", fg="green")
+        click.secho(f"✅ FIPS certified: {fips_status}", fg="green")
+        click.secho(f"✅ Serial Number: {serial_number}", fg="green")
+        click.secho(f"✅ Firmware Version: {firmware_version}", fg="green")
+        click.secho(f"✅ PIN Policy: {pin_policy}", fg="green")
+        click.secho(f"✅ Touch Policy: {touch_policy}", fg="green")
+  
 
     # Get file paths from user input or use default values
     csr_file = click.prompt("Please provide the path to the Certificate Signing Request (CSR)", default="csr.pem")
@@ -551,6 +614,9 @@ def validate_attestation():
             click.secho("💀 CSR public key does not match attestation public key", fg="red")
             sys.exit(1)
         click.secho("✅ Signature validation succeeded.", fg="green")
+        
+        # Display attested YubiKey attributes
+        get_yubikey_metadata(attestation_cert)
 
     except FileNotFoundError:
         click.secho("⛔ One or more of the requested files were not found.", fg="red")
@@ -643,9 +709,16 @@ def import_certificate():
     click.clear()
 
 
-# Quit the program
+def cleanup():
+    """Perform cleanup operations before exiting"""
+    try:
+        piv.disconnect()
+    except Exception as e:
+        logging.error(f"Error during cleanup: {str(e)}")
+
 def quit_program():
     click.echo("Quitting the program...")
+    cleanup()
     click.clear()
     sys.exit()
 
