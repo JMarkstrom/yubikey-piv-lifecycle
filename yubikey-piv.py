@@ -88,18 +88,6 @@ slot = SLOT.AUTHENTICATION
 # Key type will be RSA 2048
 key_type = KEY_TYPE.RSA2048 # TODO: Make this detectable!
 
-# Connect to a YubiKey
-yubikey = s.single()
-
-# Establish a PIV session
-piv = PivSession(yubikey.smart_card())
-
-'''
-# Get firmware version for comparison e.g determine if a feature is supported...
-version_info = yubikey.info.version
-fw = f"{version_info.major}.{version_info.minor}.{version_info.patch}"
-'''
-
 
 ######################################################################################################################################
 # CONFIGURE THE YUBIKEY (OPTION 1)                                                                                        #   
@@ -149,6 +137,18 @@ def configure_yubikey():
 
     continue_or_exit()
     click.clear()
+
+    # Connect to a YubiKey
+    yubikey = s.single()
+
+    # Establish a PIV session
+    piv = PivSession(yubikey.smart_card())
+
+    '''
+    # Get firmware version for comparison e.g determine if a feature is supported...
+    version_info = yubikey.info.version
+    fw = f"{version_info.major}.{version_info.minor}.{version_info.patch}"
+    '''
 
     # Reset the PIV applet
     piv.reset()
@@ -290,6 +290,13 @@ def create_csr():
 
     continue_or_exit()
     click.clear()
+
+    # Connect to a YubiKey
+    yubikey = s.single()
+
+    # Establish a PIV session
+    piv = PivSession(yubikey.smart_card())
+
 
     # Check if YubiKey takes TDES or AES Management key
     """
@@ -659,6 +666,12 @@ def import_certificate():
     continue_or_exit()
     click.clear()
 
+    # Connect to a YubiKey
+    yubikey = s.single()
+
+    # Establish a PIV session
+    piv = PivSession(yubikey.smart_card())
+
     # Check if YubiKey takes TDES or AES Management key
     """
     If there is no metadata support, then the YubiKey uses TDES.
@@ -698,11 +711,10 @@ def import_certificate():
         with open(signed_file, 'rb') as f:
             cert = x509.load_pem_x509_certificate(f.read(), default_backend())
             piv.put_certificate(SLOT.AUTHENTICATION, cert)
+            # Only show success message if no exception occurred
+            click.secho(f"✅ Certificate successfully imported to slot {slot:X}.", fg="green")
     except Exception as e:
-        click.secho("⛔ An error occurred while loading the certificate:", fg="red")
-
-    # Inform user if import was successful
-    click.secho(f"✅ Certificate successfully imported to {slot:X}.", fg="green")
+        click.secho(f"⛔ An error occurred while loading the certificate: {str(e)}", fg="red")
 
     # Exit program on user acknowledgement
     click.pause("\nPress any key to exit this program!")
