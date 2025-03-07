@@ -721,16 +721,16 @@ def import_certificate():
     click.clear()
 
 
-def cleanup():
-    """Perform cleanup operations before exiting"""
-    try:
-        piv.disconnect()
-    except Exception as e:
-        logging.error(f"Error during cleanup: {str(e)}")
+#def cleanup():
+#    """Perform cleanup operations before exiting"""
+#    try:
+#        piv.disconnect() # TODO: fix this!
+#    except Exception as e:
+#        logging.error(f"Error during cleanup: {str(e)}")
 
 def quit_program():
     click.echo("Quitting the program...")
-    cleanup()
+    #cleanup()
     click.clear()
     sys.exit()
 
