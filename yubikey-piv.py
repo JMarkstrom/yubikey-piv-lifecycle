@@ -1,8 +1,8 @@
 ######################################################################
 # YubiKey PIV configuration and issuance                    
 ######################################################################
-# version: 2.3
-# last updated on: 2025-03-06 by Jonas Markström
+# version: 2.4
+# last updated on: 2025-03-24 by Jonas Markström
 # see readme.md for more info.
 #
 # DEPENDENCIES: 
@@ -581,19 +581,29 @@ def validate_attestation():
     click.clear()
     intermediate_file = click.prompt("Please provide the path to the Intermediate Certificate", default="intermediate.pem")
     click.clear()
-    # This is the Yubico Root CA certificate. It will not be provided by the end-user
-    ca_file = "piv-attestation-ca.pem"
-    if os.path.isfile(ca_file):
-        # Look for the certificate on current working directory
-        click.echo("Found Yubico CA certificate on current working directory...")
+    
+    # This is the Yubico Root CA certificates. They will not be provided by the end-user
+    ca_files = ["yubico-piv-ca-1.pem", "yubico-ca-1.pem"]
+    ca_certs = []
+    
+    # Check if all CA certificates exist
+    all_files_exist = all(os.path.isfile(f) for f in ca_files)
+    
+    if all_files_exist:
+        # Look for the certificates on current working directory
+        click.echo("Found Yubico CA certificates on current working directory...")
         click.echo("")
         click.pause()
         click.clear()
     else:
-        # If we cannot find it, download it!
-        url = "https://developers.yubico.com/PIV/Introduction/piv-attestation-ca.pem"
-        urllib.request.urlretrieve(url, ca_file)
-        click.echo("We successfully downloaded the Yubico CA certificate from yubico.com...")
+        # If we cannot find the files, download them!
+        url1 = "https://developers.yubico.com/PKI/yubico-piv-ca-1.pem"  # Pre fw. 5.7.4 PIV root CA
+        url2 = "https://developers.yubico.com/PKI/yubico-ca-1.pem"     # 5.7.4 and later PIV root CA (2025)
+        
+        urllib.request.urlretrieve(url1, ca_files[0])
+        urllib.request.urlretrieve(url2, ca_files[1])
+        
+        click.echo("We successfully downloaded the Yubico CA certificates from yubico.com...")
         click.echo("")
         click.pause()
         click.clear()
@@ -606,15 +616,32 @@ def validate_attestation():
             attestation_cert = x509.load_pem_x509_certificate(f.read(), default_backend())
         with open(intermediate_file, 'rb') as f:
             intermediate_cert = x509.load_pem_x509_certificate(f.read(), default_backend())
-        with open(ca_file, 'rb') as f:
-            ca_cert = x509.load_pem_x509_certificate(f.read(), default_backend())
+            
+        # Load all CA certificates
+        for ca_file in ca_files:
+            with open(ca_file, 'rb') as f:
+                ca_certs.append(x509.load_pem_x509_certificate(f.read(), default_backend()))
 
         # Check if public keys match and display the results
         click.echo("-------------------")
         click.echo("VALIDATION RESULTS:")
         click.echo("===================")
-        verify_signature(ca_cert, intermediate_cert)
+        # Ensure the intermediate cert is signed by at least one of the root CAs
+        valid_root = False
+        for ca_cert in ca_certs:
+            try:
+                verify_signature(ca_cert, intermediate_cert)
+                valid_root = True
+                break  # Stop checking once one valid CA is found
+            except Exception:
+                pass  # Continue to the next CA if the first check fails
+
+        if not valid_root:
+            click.secho("💀 Intermediate certificate validation failed against all known Yubico root CAs.", fg="red")
+            sys.exit(1)
+
         verify_signature(intermediate_cert, attestation_cert)
+        
         if csr.public_key().public_numbers() == attestation_cert.public_key().public_numbers():
             click.secho("✅ Public keys match", fg="green")
         else:
