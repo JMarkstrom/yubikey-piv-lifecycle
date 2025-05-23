@@ -19,6 +19,7 @@ In summary, the script can perform the following actions/tasks:
 You will need to meet the following prequisites to make use of this script:
 
 - YubiKey Manager (get it [here](https://www.yubico.com/support/download/yubikey-manager/))
+- Certvalidator ('''pip install pip install certvalidator oscrypto''')
 - One (1) YubiKey 5 series authenticator (with PIV support)
 - An issuing Certificate Authority (CA) e.g a Microsoft PKI
 
