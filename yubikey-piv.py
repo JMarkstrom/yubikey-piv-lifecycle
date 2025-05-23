@@ -1,12 +1,13 @@
 ######################################################################
 # YubiKey PIV configuration and issuance                    
 ######################################################################
-# version: 2.4
-# last updated on: 2025-03-24 by Jonas Markström
+# version: 2.5
+# last updated on: 2025-05-23 by Jonas Markström
 # see readme.md for more info.
 #
 # DEPENDENCIES: 
 #   - YubiKey Manager (ykman) must be installed on the system
+#   - Certvalidator must be installed on the system
 #
 # LIMITATIONS/ KNOWN ISSUES: N/A
 # 
@@ -40,6 +41,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 ######################################################################
 
+
+# IMPORTS
+
 # Standard library imports
 import sys
 import os
@@ -48,6 +52,8 @@ import time
 import urllib.request
 import binascii
 import logging
+import hashlib
+from typing import List, Optional, Union, Dict, Any
 
 # Third-party imports
 import click
@@ -61,6 +67,12 @@ from yubikit.piv import (
 from yubikit.core import NotSupportedError
 from ykman.piv import sign_csr_builder 
 from ykman import scripting as s
+
+from certvalidator import CertificateValidator, ValidationContext
+from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.x509 import load_pem_x509_certificate
+from asn1crypto import x509 as asn1_x509
+
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -78,6 +90,9 @@ from cryptography.x509 import (
     RFC822Name,
 )
 
+
+# SETTINGS 
+
 # Default PIN and PUK values for the YubiKey PIV applet
 DEFAULT_PIN = "123456"
 DEFAULT_PUK = "12345678"
@@ -86,11 +101,32 @@ DEFAULT_PUK = "12345678"
 slot = SLOT.AUTHENTICATION
 
 # Key type will be RSA 2048
-key_type = KEY_TYPE.RSA2048 # TODO: Make this detectable!
+key_type = KEY_TYPE.RSA2048
+
+# Certificate URLs and files
+YUBICO_URLS = {
+    "piv_ca_1": "https://developers.yubico.com/PKI/yubico-piv-ca-1.pem",  # Pre fw. 5.7.4 PIV root CA
+    "ca_1": "https://developers.yubico.com/PKI/yubico-ca-1.pem",         # 5.7.4 and later PIV root CA (2025)
+    "intermediate": "https://developers.yubico.com/PKI/yubico-intermediate.pem"  # New intermediate CA certificates (2025)
+}
+
+CA_FILES = ["yubico-piv-ca-1.pem", "yubico-ca-1.pem", "yubico-intermediate.pem"]
+
+# Form factor mapping for YubiKey models
+FORM_FACTOR_NAMES: Dict[bytes, str] = {
+    b'\x00': "Unknown",
+    b'\x01': "Keychain (USB-A)",
+    b'\x02': "YubiKey Nano (USB-A)",
+    b'\x03': "Keychain (USB-C)",
+    b'\x04': "YubiKey Nano (USB-C)",
+    b'\x05': "Keychain (Lightning + USB-C)",
+    b'\x06': "YubiKey Bio MPE (USB-A)",
+    b'\x07': "YubiKey Bio MPE (USB-C)"
+}
 
 
 ######################################################################################################################################
-# CONFIGURE THE YUBIKEY (OPTION 1)                                                                                        #   
+# CONFIGURE THE YUBIKEY (OPTION 1)                                                                                                   #   
 ######################################################################################################################################
 
 # Function to check for trivial PIN or PUK selection
@@ -278,7 +314,8 @@ def create_csr():
     click.secho("  |                                                                                                |  ", bg="blue")
     click.secho("  |________________________________________________________________________________________________|  ", bg="blue")
     click.secho("                                                                                                      ", bg="blue")
-
+   
+    
     # Prompt user to continue
     def continue_or_exit():
         if click.confirm("Do you want to continue?", default=True):
@@ -355,9 +392,10 @@ def create_csr():
     orgName = click.prompt("Please enter your organization name", default="Users")
     domainName = click.prompt("Please enter your domain name", default="contoso")
     topDomain = click.prompt("Please enter your top domain name", default="com")
-    # TODO: Solve *this* to better mimic the Entra ID / Azure AD expected certificate structure!
-    # Define the Object Identifier (OID) for OtherName
-    #oid_other_name = ObjectIdentifier('1.3.6.1.4.1.311.20.2.3')
+
+    ''' TODO: Solve *this* to better mimic the Entra ID / Azure AD expected certificate structure!
+    Define the Object Identifier (OID) for OtherName
+    oid_other_name = ObjectIdentifier('1.3.6.1.4.1.311.20.2.3')'''
 
     subject = x509.Name(
         [
@@ -451,7 +489,7 @@ def create_csr():
     attestation = piv.attest_key(slot)
     attest_pem = attestation.public_bytes(serialization.Encoding.PEM)
 
-    # Save Attestation certificate to file
+    # Save attestation certificate to file
     with open('attestation.pem', 'wb') as f:
         f.write(attest_pem)
     click.clear()
@@ -459,8 +497,8 @@ def create_csr():
     # Export intermediate certificate from slot 9F
     intermediate = piv.get_certificate(slot.ATTESTATION)
 
-    # Save Attestation certificate to file
-    with open('intermediate.pem', 'wb') as f:
+    # Save intermediate certificate to file
+    with open('SlotF9Intermediate.pem', 'wb') as f:
         f.write(intermediate.public_bytes(serialization.Encoding.PEM))
     click.clear()
     
@@ -481,16 +519,17 @@ def validate_attestation():
     click.secho("  |                                                                                                |  ", bg="blue")
     click.secho("  |                                             INFO                                               |  ", bg="blue")
     click.secho("  | This option tests the authenticity of a certificate signing request (CSR) by verifying it's    |  ", bg="blue")
-    click.secho("  | private key attestation against the YubiKey attestation certificate (exported from Slot 9F)    |  ", bg="blue")
-    click.secho("  | and in turn verifying that certificate against the Yubico Root CA certificate.                 |  ", bg="blue")
+    click.secho("  | private key attestation against the YubiKey intermediate certificate (exported from slot 9F)   |  ", bg="blue")
+    click.secho("  | and in turn verifying that certificate against Yubico Intermediate and Root CA certificates.   |  ", bg="blue")
     click.secho("  |                                                                                                |  ", bg="blue")
-    click.secho("  | If the script returns 'SUCCESS' then you can be certain the CSR originates  with a key pair    |  ", bg="blue")
-    click.secho("  | created on-board a YubiKey. If however the script returns 'FAIL' then the key pair may NOT     |  ", bg="blue")
-    click.secho("  | have been generated on-board a YubiKey. In this case the CSR *should not* be signed by the CA. |  ", bg="blue")
-    click.secho("  |                                                                                                |  ", bg="blue")          
+    click.secho("  | If attestation checks are successful the script returns the results as well as attested        |  ", bg="blue")
+    click.secho("  | details about the YubiKey such as form factor and serial number. If attestation checks fail    |  ", bg="blue")
+    click.secho("  | the script will detail what fail as well as output troubleshooting information.                |  ", bg="blue")
+    click.secho("  | DO NOT issue a certificate if attestation checks fail for any reason!                          |  ", bg="blue")          
     click.secho("  |________________________________________________________________________________________________|  ", bg="blue")
     click.secho("                                                                                                      ", bg="blue")
 
+    
     # Prompt user to continue;)
     def continue_or_exit():
         if click.confirm("Do you want to continue?", default=True):
@@ -503,17 +542,107 @@ def validate_attestation():
     continue_or_exit()
     click.clear()
 
-   # Define function to verify signature
-    def verify_signature(parent: x509.Certificate, child: x509.Certificate) -> None:
-        parent.public_key().verify(
-            child.signature,
-            child.tbs_certificate_bytes,
-            padding.PKCS1v15(),
-            child.signature_hash_algorithm
-        )
+
+    # Load all certificates from PEM file
+    def load_all_pem_certificates(pem_data: bytes) -> List[x509.Certificate]:
+        """
+        Load all certificates from a PEM file that may contain multiple certificates.
+        
+        Args:
+            pem_data: Raw bytes containing one or more PEM-encoded certificates
+            
+        Returns:
+            List of cryptography.x509.Certificate objects
+            
+        Raises:
+            ValueError: If the PEM data is invalid
+        """
+        try:
+            certs = []
+            parts = pem_data.split(b"-----END CERTIFICATE-----")
+            for part in parts:
+                if b"-----BEGIN CERTIFICATE-----" in part:
+                    cert_pem = part + b"-----END CERTIFICATE-----\n"
+                    certs.append(x509.load_pem_x509_certificate(cert_pem, default_backend()))
+            return certs
+        except Exception as e:
+            raise ValueError(f"Failed to load PEM certificates: {str(e)}")
     
-    # Define function to display attested YubiKey attributes
-    def get_yubikey_metadata(attestation_cert):
+    
+    # Function to convert certificate(s) for processing
+    def to_asn1(cert: x509.Certificate) -> asn1_x509.Certificate:
+        """
+        Convert a cryptography.x509.Certificate to asn1crypto.x509.Certificate.
+        
+        Args:
+            cert: cryptography.x509.Certificate object
+            
+        Returns:
+            asn1crypto.x509.Certificate object
+            
+        Raises:
+            ValueError: If conversion fails
+        """
+        try:
+            return asn1_x509.Certificate.load(cert.public_bytes(Encoding.DER))
+        except Exception as e:
+            raise ValueError(f"Failed to convert certificate to ASN1 format: {str(e)}")
+
+
+    # Function to perform certificate chain validation
+    def validate_with_certvalidator(
+        leaf_cert: x509.Certificate,
+        intermediates: List[x509.Certificate],
+        trust_roots: List[x509.Certificate]
+    ) -> None:
+        """
+        Validate a certificate chain using certvalidator.
+        
+        Args:
+            leaf_cert: End-entity certificate to validate
+            intermediates: List of intermediate certificates
+            trust_roots: List of trusted root certificates
+            
+        Raises:
+            ValueError: If certificate validation fails
+        """
+        try:
+            context = ValidationContext(trust_roots=[to_asn1(c) for c in trust_roots])
+            validator = CertificateValidator(
+                end_entity_cert=to_asn1(leaf_cert),
+                intermediate_certs=[to_asn1(c) for c in intermediates],
+                validation_context=context
+            )
+            validator.validate_usage(set())
+        except Exception as e:
+            raise ValueError(f"Certificate validation failed: {str(e)}")
+
+
+    # Function to verify certifcate signature
+    def verify_signature(parent: x509.Certificate, child: x509.Certificate) -> None:
+        """
+        Verify that a child certificate is signed by a parent certificate.
+        
+        Args:
+            parent: Parent certificate that should have signed the child
+            child: Child certificate to verify
+            
+        Raises:
+            ValueError: If signature verification fails
+        """
+        try:
+            parent.public_key().verify(
+                child.signature,
+                child.tbs_certificate_bytes,
+                padding.PKCS1v15(),
+                child.signature_hash_algorithm
+            )
+        except Exception as e:
+            raise ValueError(f"Signature verification failed: {str(e)}")
+    
+
+    # Function to display attested YubiKey attributes
+    def get_yubikey_metadata(attestation_cert: x509.Certificate) -> None:
         """
         Extract and display YubiKey metadata from attestation certificate.
         
@@ -524,54 +653,34 @@ def validate_attestation():
             None - prints metadata to console
         """
         firmware_version = serial_number = pin_policy = touch_policy = "Not Found"
-        
-        # Define form factor mapping
-        form_factor_names = {
-            b'\x00': "Unknown",
-            b'\x01': "Keychain (USB-A)",
-            b'\x02': "YubiKey Nano (USB-A)",
-            b'\x03': "Keychain (USB-C)",
-            b'\x04': "YubiKey Nano (USB-C)",
-            b'\x05': "Keychain (Lightning + USB-C)",
-            b'\x06': "YubiKey Bio MPE (USB-A)",
-            b'\x07': "YubiKey Bio MPE (USB-C)"
-        }
-
-        # Initialize FIPS status as Non-FIPS by default
+        form_factor = "Unknown"
         fips_status = "false"
         
-        for ext in attestation_cert.extensions:
-            # Get Model / formfactor
-            if ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.9":
-                form_factor = form_factor_names.get(ext.value.value, "Unknown")
-            
-            # Get FIPS status
-            elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.10":
-                # If the OID is present, it's a FIPS device
-                fips_status = "true"
-            elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.7":
-                # Get Serial Number
-                ext_data = ext.value.value
-                # Assuming the first two bytes are not part of the serial number, skip them
-                serial_number = int(binascii.hexlify(ext_data[2:]), 16)
-            
-            elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.3":
-                # Get Firmware Version
-                ext_data = binascii.hexlify(ext.value.value).decode('utf-8')
-                firmware_version = f"{int(ext_data[:2], 16)}.{int(ext_data[2:4], 16)}.{int(ext_data[4:6], 16)}"
-            elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.8":
-                # Get PIN and Touch Policy
-                ext_data = binascii.hexlify(ext.value.value).decode('utf-8')
-                pin_policy = {"01": "never", "02": "once per session", "03": "always"}.get(ext_data[:2], "Unknown")
-                touch_policy = {"01": "never", "02": "always", "03": "cached for 15s"}.get(ext_data[2:4], "Unknown")
+        try:
+            for ext in attestation_cert.extensions:
+                if ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.9":
+                    form_factor = FORM_FACTOR_NAMES.get(ext.value.value, "Unknown")
+                elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.10":
+                    fips_status = "true"
+                elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.7":
+                    ext_data = ext.value.value
+                    serial_number = int(binascii.hexlify(ext_data[2:]), 16)
+                elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.3":
+                    ext_data = binascii.hexlify(ext.value.value).decode('utf-8')
+                    firmware_version = f"{int(ext_data[:2], 16)}.{int(ext_data[2:4], 16)}.{int(ext_data[4:6], 16)}"
+                elif ext.oid.dotted_string == "1.3.6.1.4.1.41482.3.8":
+                    ext_data = binascii.hexlify(ext.value.value).decode('utf-8')
+                    pin_policy = {"01": "never", "02": "once per session", "03": "always"}.get(ext_data[:2], "Unknown")
+                    touch_policy = {"01": "never", "02": "always", "03": "cached for 15s"}.get(ext_data[2:4], "Unknown")
 
-        # Display the YubiKey metadata
-        click.secho(f"✅ Model: {form_factor}", fg="green")
-        click.secho(f"✅ FIPS certified: {fips_status}", fg="green")
-        click.secho(f"✅ Serial Number: {serial_number}", fg="green")
-        click.secho(f"✅ Firmware Version: {firmware_version}", fg="green")
-        click.secho(f"✅ PIN Policy: {pin_policy}", fg="green")
-        click.secho(f"✅ Touch Policy: {touch_policy}", fg="green")
+            click.secho(f"✅ Model: {form_factor}", fg="green")
+            click.secho(f"✅ FIPS certified: {fips_status}", fg="green")
+            click.secho(f"✅ Serial Number: {serial_number}", fg="green")
+            click.secho(f"✅ Firmware Version: {firmware_version}", fg="green")
+            click.secho(f"✅ PIN Policy: {pin_policy}", fg="green")
+            click.secho(f"✅ Touch Policy: {touch_policy}", fg="green")
+        except Exception as e:
+            click.secho(f"⚠️ Warning: Failed to extract some YubiKey metadata: {str(e)}", fg="yellow")
   
 
     # Get file paths from user input or use default values
@@ -579,14 +688,14 @@ def validate_attestation():
     click.clear()
     attestation_file = click.prompt("Please provide the path to the PIV Attestation Certificate", default="attestation.pem")
     click.clear()
-    intermediate_file = click.prompt("Please provide the path to the Intermediate Certificate", default="intermediate.pem")
+    slotF9Intermediate_file = click.prompt("Please provide the path to the Intermediate Certificate", default="SlotF9Intermediate.pem")
     click.clear()
     
-    # This is the Yubico Root CA certificates. They will not be provided by the end-user
-    ca_files = ["yubico-piv-ca-1.pem", "yubico-ca-1.pem"]
+    # Yubico Root and Intermediate CA certificates.
+    ca_files = ["yubico-piv-ca-1.pem", "yubico-ca-1.pem", "yubico-intermediate.pem"]
     ca_certs = []
     
-    # Check if all CA certificates exist
+    # Check if all CA root and intermediate certificates exist
     all_files_exist = all(os.path.isfile(f) for f in ca_files)
     
     if all_files_exist:
@@ -597,66 +706,107 @@ def validate_attestation():
         click.clear()
     else:
         # If we cannot find the files, download them!
-        url1 = "https://developers.yubico.com/PKI/yubico-piv-ca-1.pem"  # Pre fw. 5.7.4 PIV root CA
-        url2 = "https://developers.yubico.com/PKI/yubico-ca-1.pem"     # 5.7.4 and later PIV root CA (2025)
+        click.echo("Downloading Yubico CA certificates...")
+        urllib.request.urlretrieve(YUBICO_URLS["piv_ca_1"], CA_FILES[0])
+        urllib.request.urlretrieve(YUBICO_URLS["ca_1"], CA_FILES[1])
+        urllib.request.urlretrieve(YUBICO_URLS["intermediate"], CA_FILES[2])
         
-        urllib.request.urlretrieve(url1, ca_files[0])
-        urllib.request.urlretrieve(url2, ca_files[1])
-        
-        click.echo("We successfully downloaded the Yubico CA certificates from yubico.com...")
+        click.echo("We successfully downloaded required certificates from yubico.com...")
         click.echo("")
         click.pause()
         click.clear()
 
     # Load certificate files and verify signatures
     try:
+        # Load CSR
         with open(csr_file, 'rb') as f:
             csr = x509.load_pem_x509_csr(f.read(), default_backend())
+
+        # Load attestation certificate from slot 9A
         with open(attestation_file, 'rb') as f:
             attestation_cert = x509.load_pem_x509_certificate(f.read(), default_backend())
-        with open(intermediate_file, 'rb') as f:
-            intermediate_cert = x509.load_pem_x509_certificate(f.read(), default_backend())
-            
-        # Load all CA certificates
+
+        # Load intermediate certificate from slot 9F
+        with open(slotF9Intermediate_file, 'rb') as f:
+            slotF9_intermediate_cert = x509.load_pem_x509_certificate(f.read(), default_backend())
+
+        # Load all CA root and intermediate certificates
+        ca_certs = []
         for ca_file in ca_files:
             with open(ca_file, 'rb') as f:
-                ca_certs.append(x509.load_pem_x509_certificate(f.read(), default_backend()))
+                cert_data = f.read()
+                ca_certs.extend(load_all_pem_certificates(cert_data))
+        
+        # Separate loaded CA certs into roots and intermediates
+        root_candidates = []
+        intermediate_candidates = []
 
-        # Check if public keys match and display the results
+        for cert in ca_certs:
+            issuer = cert.issuer.rfc4514_string()
+            subject = cert.subject.rfc4514_string()
+            if issuer == subject:
+                root_candidates.append(cert)
+            else:
+                intermediate_candidates.append(cert)
+
+
+        # ---- Begin Validation ----
         click.echo("-------------------")
         click.echo("VALIDATION RESULTS:")
         click.echo("===================")
-        # Ensure the intermediate cert is signed by at least one of the root CAs
-        valid_root = False
-        for ca_cert in ca_certs:
-            try:
-                verify_signature(ca_cert, intermediate_cert)
-                valid_root = True
-                break  # Stop checking once one valid CA is found
-            except Exception:
-                pass  # Continue to the next CA if the first check fails
 
-        if not valid_root:
-            click.secho("💀 Intermediate certificate validation failed against all known Yubico root CAs.", fg="red")
+        # Step 1
+        try:
+            validate_with_certvalidator(
+                leaf_cert=slotF9_intermediate_cert,
+                intermediates=intermediate_candidates,
+                trust_roots=root_candidates
+            )
+            click.secho("✅ Slot 9F certificate is chained to a trusted Yubico root CA.", fg="green")
+        except Exception as e:
+                click.secho("💀 Slot 9F certificate could not be chained to a trusted Yubico root CA.", fg="red")
+                click.secho(f"🔍 Details: {e}", fg="yellow")
+                sys.exit(1)
+
+        # Step 2: Validate attestation cert is signed by the Slot 9F intermediate cert
+        try:
+            verify_signature(slotF9_intermediate_cert, attestation_cert)
+            click.secho("✅ Attestation certificate is signed by the slot 9F certificate.", fg="green")
+        except Exception:
+            click.secho("💀 Attestation certificate is NOT signed by the slot 9F certificate.", fg="red")
             sys.exit(1)
 
-        verify_signature(intermediate_cert, attestation_cert)
-        
-        if csr.public_key().public_numbers() == attestation_cert.public_key().public_numbers():
-            click.secho("✅ Public keys match", fg="green")
+        # Step 3: Check CSR and attestation public key match
+        csr_pub = csr.public_key().public_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        att_pub = attestation_cert.public_key().public_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+
+        if csr_pub == att_pub:
+            click.secho("✅ CSR public keys matches Attestation certificate public key.", fg="green")
         else:
             click.secho("💀 CSR public key does not match attestation public key", fg="red")
+            click.secho("🔍 Public key fingerprints (for debugging):", fg="yellow")
+            click.secho(f"   CSR Public Key SHA256:         {hashlib.sha256(csr_pub).hexdigest()}", fg="yellow")
+            click.secho(f"   Attestation Public Key SHA256: {hashlib.sha256(att_pub).hexdigest()}", fg="yellow")
             sys.exit(1)
-        click.secho("✅ Signature validation succeeded.", fg="green")
+
+        # Step 4: Display YubiKey metadata
         
-        # Display attested YubiKey attributes
+        click.echo("-------------------")
+        click.echo("YubiKey details:")
+        click.echo("===================")
         get_yubikey_metadata(attestation_cert)
 
     except FileNotFoundError:
         click.secho("⛔ One or more of the requested files were not found.", fg="red")
+    except Exception as e:
+        click.secho(f"⛔ CA path validation failed: {e}", fg="red")
 
-    except Exception:
-        click.secho("⛔ CA path validation failed.", fg="red")
 
     # Return to menu system
     click.pause("\nPress any key to return to the main menu.")
@@ -747,15 +897,18 @@ def import_certificate():
     click.pause("\nPress any key to exit this program!")
     click.clear()
 
-
-#def cleanup():
-#    """Perform cleanup operations before exiting"""
-#    try:
-#        piv.disconnect() # TODO: fix this!
-#    except Exception as e:
-#        logging.error(f"Error during cleanup: {str(e)}")
-
+# Function to exit program
 def quit_program():
+    """
+    Gracefully exit the program.
+    
+    This function:
+    1. Displays a quit message
+    2. Clears the screen
+    3. Exits the program with a clean status code
+    
+    Note: The cleanup() function needs to be implemented.
+    """
     click.echo("Quitting the program...")
     #cleanup()
     click.clear()
