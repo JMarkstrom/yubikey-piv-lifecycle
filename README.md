@@ -59,6 +59,7 @@ Donations will support costs such as domain registration and code signing (plann
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?business=RXAPDEYENCPXS&no_recurring=1&item_name=Help+cover+costs+of+the+SWJM+blog+and+app+code+signing%2C+supporting+a+more+secure+future+for+all.&currency_code=USD)
 
 ## 📜 Release History
+* 2025.06.10 `v2.7` Simplified chain validation
 * 2025.05.23 `v2.5` Support for new Yubico PKI (full)
 * 2025.03.24 `v2.4` Support for new Yubico root CA
 * 2025.03.06 `v2.3` Display of attested metadata
