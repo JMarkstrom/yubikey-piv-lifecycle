@@ -1,7 +1,7 @@
 ######################################################################
 # YubiKey PIV configuration and issuance                    
 ######################################################################
-# version: 2.6
+# version: 2.7
 # last updated on: 2025-06-10 by Jonas Markström
 # see readme.md for more info.
 #
@@ -767,19 +767,11 @@ def validate_attestation():
             )
             click.secho("✅ Attestation certificate is chained to a trusted Yubico root CA.", fg="green")
         except Exception as e:
-                click.secho("💀 Attestation certificate could not be chained to a trusted Yubico root CA.", fg="red")
+                click.secho("💀 Certificate chain validation failed.", fg="red")
                 click.secho(f"🔍 Details: {e}", fg="yellow")
                 sys.exit(1)
 
-        # Step 2: Validate attestation cert is signed by the Slot 9F intermediate cert
-        try:
-            verify_signature(slotF9_intermediate_cert, attestation_cert)
-            click.secho("✅ Attestation certificate is signed by the slot 9F certificate.", fg="green")
-        except Exception:
-            click.secho("💀 Attestation certificate is NOT signed by the slot 9F certificate.", fg="red")
-            sys.exit(1)
-
-        # Step 3: Check CSR and attestation public key match
+        # Step 2: Check CSR and attestation public key match
         csr_pub = csr.public_key().public_bytes(
             encoding=serialization.Encoding.DER,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
