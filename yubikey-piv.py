@@ -1,8 +1,8 @@
 ######################################################################
 # YubiKey PIV configuration and issuance                    
 ######################################################################
-# version: 2.5
-# last updated on: 2025-05-23 by Jonas Markström
+# version: 2.6
+# last updated on: 2025-06-10 by Jonas Markström
 # see readme.md for more info.
 #
 # DEPENDENCIES: 
@@ -740,6 +740,9 @@ def validate_attestation():
         # Separate loaded CA certs into roots and intermediates
         root_candidates = []
         intermediate_candidates = []
+        
+        # Add slot 9F intermediate cert to intermediates
+        intermediate_candidates.append(slotF9_intermediate_cert)
 
         for cert in ca_certs:
             issuer = cert.issuer.rfc4514_string()
@@ -758,13 +761,13 @@ def validate_attestation():
         # Step 1
         try:
             validate_with_certvalidator(
-                leaf_cert=slotF9_intermediate_cert,
+                leaf_cert=attestation_cert,
                 intermediates=intermediate_candidates,
                 trust_roots=root_candidates
             )
-            click.secho("✅ Slot 9F certificate is chained to a trusted Yubico root CA.", fg="green")
+            click.secho("✅ Attestation certificate is chained to a trusted Yubico root CA.", fg="green")
         except Exception as e:
-                click.secho("💀 Slot 9F certificate could not be chained to a trusted Yubico root CA.", fg="red")
+                click.secho("💀 Attestation certificate could not be chained to a trusted Yubico root CA.", fg="red")
                 click.secho(f"🔍 Details: {e}", fg="yellow")
                 sys.exit(1)
 
