@@ -48,7 +48,7 @@ Option ```4```: **Import certifcate**:
 
 **Note**: For more detail and broader context, please refer to [swjm.blog](https://swjm.blog/fc967d06d4b0)
 
-## 🥅 Roadmap
+## 📖 Roadmap
 Possible improvements includes:
 - Improve CSR to better match Microsoft domain and Entra ID requirements
 
@@ -66,3 +66,9 @@ Donations will support costs such as domain registration and code signing (plann
 * 2024.06.04 `v2.2` YubiKey fw 5.7+ support
 * 2023.09.06 `v2.0` Various improvements
 * 2023.08.14 `v1.0` first release
+
+## ™️ Trademark notice
+YubiKey is a trademark of Yubico. This project is independent of and is not affiliated with, endorsed by, or sponsored by Yubico.
+
+## ⚖️ License
+This software is proprietary. Copyright (c) 2025 swjm.blog. All rights reserved. See [LICENSE](LICENSE) for details.
