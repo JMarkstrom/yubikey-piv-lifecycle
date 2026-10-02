@@ -69,5 +69,5 @@ Donations will support costs such as domain registration and code signing (plann
 YubiKey is a trademark of Yubico. This project is independent of and is not affiliated with, endorsed by, or sponsored by Yubico.
 
 ## ⚖️ License
-This software is licensed under the BSD-2-Clause License.
+This software is licensed under the BSD-2-Clause License.   
 Copyright (c) 2026 swjm.blog.
